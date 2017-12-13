@@ -16,7 +16,7 @@ void img_preview(Mat img);
 int Median(double a[],int N);
 void CornerPoint(vector<Point> contour,Point* ULp,Point* URp,Point* DLp,Point *DRp);
 void drawCross(Mat img,Point p,Scalar color);
-
+double dist(Point p1,Point p2);
 
 int main(int argc, char** argv)
 {
@@ -138,7 +138,7 @@ int main(int argc, char** argv)
     DLq.reserve(numFace);
     DRq.reserve(numFace);
     faceCenter.reserve(numFace);
-    int faceFlag[numFace];//1-left 2-right 3-top
+    int faceFlag[numFace]={0};//0-init 1-left 2-right 3-top
 
     for(i=0; i<contours.size(); i++ )
     {
@@ -151,27 +151,67 @@ int main(int argc, char** argv)
     Point center;
     center.x=m.m10/m.m00;
     center.y=m.m01/m.m00;
-    drawCross(raw_copy,center,Scalar(125,0,0));
+    // drawCross(raw_copy,center,Scalar(125,0,0));
 
 
     CornerPoint(contours[i],&ULp,&URp,&DLp,&DRp);
-    drawCross(raw_copy,ULp,Scalar(0,0,255));
-    drawCross(raw_copy,URp,Scalar(0,255,0));
-    drawCross(raw_copy,DLp,Scalar(255,0,0));
-    drawCross(raw_copy,DRp,Scalar(255,255,255));
+    //drawCross(raw_copy,ULp,Scalar(0,0,255));
+    //drawCross(raw_copy,URp,Scalar(0,255,0));
+    // drawCross(raw_copy,DLp,Scalar(255,0,0));
+    // drawCross(raw_copy,DRp,Scalar(255,255,255));
+
+
+
 
     ULq[i]=ULp;
     URq[i]=URp;
     DLq[i]=DLp;
     DRq[i]=DRp;
 
-    img_preview(raw_copy);
         //img_preview(blank);
+
+    //find upper face
+    double edgelen=sqrt(area);
+    cout<<"dist :"<<dist(ULp,DLp)<<endl;
+    cout<<"edge :"<<edgelen<<endl;
+    if((dist(ULp,DLp)<edgelen/2)&&(dist(URp,DRp)<edgelen/2))
+    {
+        faceFlag[i]=3;
+        drawCross(raw_copy,center,Scalar(255,0,0));
+    }
+
+
+    //line have a big K is a vel line
+    double dx1,dx2;
+    if(abs(ULp.x-DLp.x)<0.00001)
+    {dx1=3;}
+    else
+    {dx1=abs(ULp.y-DLp.y)/abs(ULp.x-DLp.x);}
+
+    if(abs(URp.x-DRp.x)<0.00001)
+    {dx2=3;}
+    else
+    {dx2=abs(URp.y-DRp.y)/abs(URp.x-DRp.x);}
+
+    if((dx1>2.5)&&(dx2>2.5)&&faceFlag[i]==0)
+    {
+        if((URp.y>ULp.y)&&(DRp.y>DLp.y))
+        {
+            faceFlag[i]=1;//left
+            drawCross(raw_copy,center,Scalar(0,0,255));
+        }
+        if((URp.y<ULp.y)&&(DRp.y<DLp.y))
+        {
+            faceFlag[i]=2;//right
+            drawCross(raw_copy,center,Scalar(0,255,0));
+        }
+    }
+      img_preview(raw_copy); 
     }
 
 
     
-
+    img_preview(raw_copy); 
 
 
 
@@ -310,4 +350,12 @@ void drawCross(Mat img,Point p,Scalar color)
     Point v(20,0);
     line(img,p-h,p+h,color,2,8,0);
     line(img,p-v,p+v,color,2,8,0);
+}
+
+double dist(Point p1,Point p2)
+{
+    double res;
+    Point p=p1-p2;
+    res=sqrt(p.x*p.x+p.y*p.y);
+    return res;
 }
