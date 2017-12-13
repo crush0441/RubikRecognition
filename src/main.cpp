@@ -14,6 +14,9 @@ char * imgname = "../img2.jpg";
 void bgr2BW(Mat bgrimg,Mat * BW_res);
 void img_preview(Mat img);
 int Median(double a[],int N);
+void CornerPoint(vector<Point> contour,Point* ULp,Point* URp,Point* DLp,Point *DRp);
+void drawCross(Mat img,Point p,Scalar color);
+
 
 int main(int argc, char** argv)
 {
@@ -122,19 +125,54 @@ int main(int argc, char** argv)
 
     }
 
-    cout<<contours.size()<<endl;
+    //cout<<contours.size()<<endl;
+    // find corner point to divide faces
+    Mat raw_copy=raw_img.clone();
+    Point ULp,URp,DLp,DRp;
+
+    int numFace = contours.size();
+    vector<Point>  ULq,URq,DLq,DRq;
+    vector<Point>  faceCenter;
+    ULq.reserve(numFace);
+    URq.reserve(numFace);
+    DLq.reserve(numFace);
+    DRq.reserve(numFace);
+    faceCenter.reserve(numFace);
+    int faceFlag[numFace];//1-left 2-right 3-top
+
     for(i=0; i<contours.size(); i++ )
     {
         Scalar color=255;
         drawContours( blank, contours, i, color, 1, 8);
-        img_preview(blank);
+        
         double area=contourArea(contours[i]);
+    Moments m;
+    m=moments(contours[i],true);
+    Point center;
+    center.x=m.m10/m.m00;
+    center.y=m.m01/m.m00;
+    drawCross(raw_copy,center,Scalar(125,0,0));
+
+
+    CornerPoint(contours[i],&ULp,&URp,&DLp,&DRp);
+    drawCross(raw_copy,ULp,Scalar(0,0,255));
+    drawCross(raw_copy,URp,Scalar(0,255,0));
+    drawCross(raw_copy,DLp,Scalar(255,0,0));
+    drawCross(raw_copy,DRp,Scalar(255,255,255));
+
+    ULq[i]=ULp;
+    URq[i]=URp;
+    DLq[i]=DLp;
+    DRq[i]=DRp;
+
+    img_preview(raw_copy);
+        //img_preview(blank);
     }
 
 
+    
 
 
-    //img_preview(bw_img);
 
 
  	return 0; 
@@ -222,3 +260,54 @@ int Median(double a[],int N)
     }
     return a[(N-1)/2];
  }
+
+void CornerPoint(vector<Point> contour,Point* ULp,Point* URp,Point* DLp,Point *DRp)
+ {
+    double UL,UR,DL,DR;
+    UL=100000;
+    UR=-100000;
+    DL=100000;
+    DR=-100000;
+    
+    for(vector<Point>::iterator it=contour.begin();it!=contour.end();it++)
+    {
+        if((*it).x+(*it).y<UL)
+        {
+            (*ULp).x=(*it).x;
+            (*ULp).y=(*it).y;
+            UL=(*it).x+(*it).y;
+        }
+        if((*it).x-(*it).y>UR)
+        {
+            //cout<<"DLp: DL"<<(*it).x-(*it).y<<"  "<<DL<<endl;
+            (*URp).x=(*it).x;
+            (*URp).y=(*it).y;
+            UR=(*it).x-(*it).y;
+        }
+        if((*it).x-(*it).y<DL)
+        {
+            (*DLp).x=(*it).x;
+            (*DLp).y=(*it).y;
+            DL=(*it).x-(*it).y;
+        }
+        if((*it).x+(*it).y>DR)
+        {
+            (*DRp).x=(*it).x;
+            (*DRp).y=(*it).y;
+            DR=(*it).x+(*it).y;
+        }
+
+    }
+    cout<<(*ULp)<<endl;
+    cout<<(*URp)<<endl;
+    cout<<(*DLp)<<endl;
+    cout<<(*DRp)<<endl;
+ }
+
+void drawCross(Mat img,Point p,Scalar color)
+{
+    Point h(0,20);
+    Point v(20,0);
+    line(img,p-h,p+h,color,2,8,0);
+    line(img,p-v,p+v,color,2,8,0);
+}
