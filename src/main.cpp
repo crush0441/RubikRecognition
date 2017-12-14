@@ -22,13 +22,17 @@ void drawYline(Mat img,Point po,double angle,Scalar color);
 void crossPoint(Point p0,Point p1,double angle0,double angle1,Point* crossPoint);
 void drawsmallCross(Mat img,Point p,Scalar color);
 int pointCluster(vector<Point> raw,vector<Point>* center,double limit);
+void checkPixelColor(Mat raw_copy,Mat* HSV,Point po);
+static void onmouse(int event,int x,int y,int f,void * param);
 
 int main(int argc, char** argv)
 {
 	Mat raw_img = imread(imgname);
     Mat bw_img;
+    Mat HSVchannel[3];
     namedWindow("raw",CV_WINDOW_NORMAL);
     namedWindow("img_preview",CV_WINDOW_NORMAL);
+    cv::setMouseCallback("img_preview",onmouse,reinterpret_cast<void*> (&HSVchannel[0]));  
     imshow("raw",raw_img);
     bgr2BW(raw_img,&bw_img);
     int i,j;
@@ -285,7 +289,7 @@ int main(int argc, char** argv)
    vector<double> angleYR; 
    double MedangleXL,MedangleYL,MedangleXR,MedangleYR;
 
-
+    Mat hsv_channel[3];
    img_preview(raw_copy); 
 
 
@@ -293,7 +297,7 @@ int main(int argc, char** argv)
 
    for(i=0;i<numFace;i++)
    {
-    drawContours( raw_copy, contours, i, Scalar(255,255,255), 1, 8);
+    drawContours( raw_copy, contours, i, Scalar(255,255,255), 2, 8);
     // /cout<<"time "<<i<<endl;
     if(faceFlag[i]==1)//left
     {
@@ -500,9 +504,76 @@ int main(int argc, char** argv)
    cout<<"RNUM: "<<pointCluster(Rcross,&extraR,edgeR*errLim)<<endl;
    cout<<"UNUM: "<<pointCluster(Ucross,&extraU,edgeU*errLim)<<endl;
 
+   //TODO draw miss retc here which is similiar to other rect
 
 
+   //deal with color things
+   Mat raw_color=raw_img.clone();
+   Mat hsv_img;//=bgr2hsv(raw_color);
+
+   cvtColor(raw_color,hsv_img,CV_BGR2HSV);
+   split(hsv_img,HSVchannel);
+   img_preview(HSVchannel[0]);
+   img_preview(HSVchannel[1]);
+   img_preview(HSVchannel[2]);
     
+   int font=FONT_HERSHEY_PLAIN;
+   //scan all the poins and give color label
+   for(i=0;i<numFace;i++)
+   {
+        //putText(raw_copy,"H",faceCenter[i],font,2,Scalar(0,0,0));
+
+    //color porblem
+        if((HSVchannel[1].at<uchar>(faceCenter[i]))<50)
+        {
+        putText(raw_copy,"W",faceCenter[i],font,3,Scalar(0,0,0));
+        continue;
+        }
+        int Hval=HSVchannel[0].at<uchar>(faceCenter[i]);
+        if(Hval<10)
+        {
+        putText(raw_copy,"R",faceCenter[i],font,3,Scalar(0,0,0));
+        }
+        if(Hval>9&&Hval<22)
+        {
+        putText(raw_copy,"O",faceCenter[i],font,3,Scalar(0,0,0));
+        }
+        if(Hval>21&&Hval<35)
+        {
+        putText(raw_copy,"Y",faceCenter[i],font,3,Scalar(0,0,0));
+        }
+        if(Hval>50&&Hval<90)
+        {
+        putText(raw_copy,"G",faceCenter[i],font,3,Scalar(0,0,0));
+        }
+        if(Hval>95&&Hval<120)
+        {
+        putText(raw_copy,"B",faceCenter[i],font,3,Scalar(0,0,0));
+        }
+        
+   }
+
+   if(extraL.size()!=0)
+   {
+        for(i=0;i<extraL.size();i++)
+        {
+            checkPixelColor(raw_copy,HSVchannel,extraL[i]);
+        }
+   }
+   if(extraR.size()!=0)
+   {
+        for(i=0;i<extraR.size();i++)
+        {
+            checkPixelColor(raw_copy,HSVchannel,extraR[i]);
+        }
+   }   
+   if(extraU.size()!=0)
+   {
+        for(i=0;i<extraU.size();i++)
+        {
+            checkPixelColor(raw_copy,HSVchannel,extraU[i]);
+        }
+   }
 
     img_preview(raw_copy); 
 
@@ -766,5 +837,47 @@ int pointCluster(vector<Point> raw,vector<Point>* center,double limit)
         (*center).push_back(Pointsum[i]);
     }
     return label;
+}
+
+static void onmouse(int event,int x,int y,int f,void * param)
+{
+         Mat *im = reinterpret_cast<Mat*>(param);  
+        
+        if(event==CV_EVENT_LBUTTONDOWN)
+        {
+            std::cout<<"at("<<x<<","<<y<<")value is:"  
+                <<static_cast<int>(im->at<uchar>(cv::Point(x,y)))<<std::endl;  
+        }
+}
+
+void checkPixelColor(Mat raw_copy,Mat* HSV,Point po)
+{
+        int font=FONT_HERSHEY_PLAIN;
+        if((HSV[1].at<uchar>(po))<50)
+        {
+        putText(raw_copy,"W",po,font,3,Scalar(0,0,0));
+        return;
+        }
+        int Hval=HSV[0].at<uchar>(po);
+        if(Hval<10)
+        {
+        putText(raw_copy,"R",po,font,3,Scalar(0,0,0));
+        }
+        if(Hval>9&&Hval<22)
+        {
+        putText(raw_copy,"O",po,font,3,Scalar(0,0,0));
+        }
+        if(Hval>21&&Hval<35)
+        {
+        putText(raw_copy,"Y",po,font,3,Scalar(0,0,0));
+        }
+        if(Hval>50&&Hval<90)
+        {
+        putText(raw_copy,"G",po,font,3,Scalar(0,0,0));
+        }
+        if(Hval>95&&Hval<120)
+        {
+        putText(raw_copy,"B",po,font,3,Scalar(0,0,0));
+        }
 }
 
