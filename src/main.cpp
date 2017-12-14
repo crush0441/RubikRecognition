@@ -217,23 +217,32 @@ int main(int argc, char** argv)
     vector<double> YL;
     vector<double> XR;
     vector<double> YR;
+    vector<double> XU;
+    vector<double> YU;
     Point Lcen;
     Point Rcen;
+    Point Ucen;
 
         //cout<<"coufaceFlag "<<faceFlag.size()<<endl;
     for(i=0; i<numFace; i++ )
     { 
         if(faceFlag[i]==1)
         {  
-        cout<<"numFace "<<i<<endl;
+        // cout<<"numFace "<<i<<endl;
             XL.push_back(faceCenter[i].x);
             YL.push_back(faceCenter[i].y);
         }
         if(faceFlag[i]==2)
         {
-        cout<<"numFace "<<i<<endl;
+        // cout<<"numFace "<<i<<endl;
             XR.push_back(faceCenter[i].x);
             YR.push_back(faceCenter[i].y);
+        }
+        if(faceFlag[i]==3)
+        {
+        // cout<<"numFace "<<i<<endl;
+            XU.push_back(faceCenter[i].x);
+            YU.push_back(faceCenter[i].y);
         }
     }
     //cout<<"XL: "<<XL.size()<<endl;
@@ -243,12 +252,17 @@ int main(int argc, char** argv)
      sort(YL.begin(),YL.end());
      sort(XR.begin(),XR.end());
      sort(YR.begin(),YR.end());
+        sort(XR.begin(),XR.end());
+     sort(YR.begin(),YR.end());
     Lcen.x=XL[XL.size()/2];
     Lcen.y=YL[YL.size()/2];
     Rcen.x=XR[XR.size()/2];
     Rcen.y=YR[YR.size()/2];
+    Ucen.x=UR[UR.size()/2];
+    Ucen.y=UR[UR.size()/2];
    drawCross(raw_copy,Lcen,Scalar(0,0,255));
    drawCross(raw_copy,Rcen,Scalar(255,0,0));
+   drawCross(raw_copy,Ucen,Scalar(0,255,0));
     
     img_preview(raw_copy); 
 
