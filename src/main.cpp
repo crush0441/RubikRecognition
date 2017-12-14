@@ -19,6 +19,9 @@ void drawCross(Mat img,Point p,Scalar color);
 double dist(Point p1,Point p2);
 void drawXline(Mat img,Point po,double angle,Scalar color);
 void drawYline(Mat img,Point po,double angle,Scalar color);
+void crossPoint(Point p0,Point p1,double angle0,double angle1,Point* crossPoint);
+void drawsmallCross(Mat img,Point p,Scalar color);
+
 int main(int argc, char** argv)
 {
 	Mat raw_img = imread(imgname);
@@ -352,6 +355,8 @@ int main(int argc, char** argv)
         //cout<<"UL UR DL DR "<<ULq[i]<<" "<<URq[i]<<"  "<<DLq[i]<<"  "<<DRq[i]<<endl;
         //drawXline(raw_copy,faceCenter[i],MedangleXL,Scalar(255,0,0));
         //drawXline(raw_copy,faceCenter[i],MedangleYL,Scalar(0,255,0));
+        
+        //cross point lab
     }
     
     if(faceFlag[i]==2)//right
@@ -361,8 +366,8 @@ int main(int argc, char** argv)
     }
     if(faceFlag[i]==3)//upper
     {
-        drawXline(raw_copy,faceCenter[i],MedangleXL,Scalar(255,0,0));
-        drawXline(raw_copy,faceCenter[i],MedangleXR*Upper_corre,Scalar(0,255,0));
+        // drawXline(raw_copy,faceCenter[i],MedangleXL,Scalar(255,0,0));
+        // drawXline(raw_copy,faceCenter[i],MedangleXR*Upper_corre,Scalar(0,255,0));
     }
    }
     
@@ -519,6 +524,15 @@ void drawCross(Mat img,Point p,Scalar color)
     line(img,p-v,p+v,color,2,8,0);
 }
 
+
+void drawsmallCross(Mat img,Point p,Scalar color)
+{
+    Point h(0,10);
+    Point v(10,0);
+    line(img,p-h,p+h,color,1,8,0);
+    line(img,p-v,p+v,color,1,8,0);
+}
+
 double dist(Point p1,Point p2)
 {
     double res;
@@ -538,5 +552,11 @@ void drawXline(Mat img,Point po,double angle,Scalar color)
     r.x=po.x+angle*len;
     r.y=po.y+len;
     line(img,l,r,color,2,8,0);
+}
+
+void crossPoint(Point p0,Point p1,double angle0,double angle1,Point* crossPoint)
+{
+    (*crossPoint).y=(p0.y*angle0-p1.y*angle1-p0.x+p1.x)/(angle0-angle1);
+    (*crossPoint).x=((double)((*crossPoint).y-p0.y)*angle0+p0.x);
 }
 
