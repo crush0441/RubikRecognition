@@ -17,12 +17,14 @@ int Median(double a[],int N);
 void CornerPoint(vector<Point> contour,Point* ULp,Point* URp,Point* DLp,Point *DRp);
 void drawCross(Mat img,Point p,Scalar color);
 double dist(Point p1,Point p2);
-
+void drawXline(Mat img,Point po,double angle,Scalar color);
+void drawYline(Mat img,Point po,double angle,Scalar color);
 int main(int argc, char** argv)
 {
 	Mat raw_img = imread(imgname);
     Mat bw_img;
     namedWindow("raw",CV_WINDOW_NORMAL);
+    namedWindow("img_preview",CV_WINDOW_NORMAL);
     imshow("raw",raw_img);
     bgr2BW(raw_img,&bw_img);
     int i;
@@ -157,10 +159,10 @@ int main(int argc, char** argv)
     faceCenter[i]=center;
 
     CornerPoint(contours[i],&ULp,&URp,&DLp,&DRp);
-    //drawCross(raw_copy,ULp,Scalar(0,0,255));
-    //drawCross(raw_copy,URp,Scalar(0,255,0));
+    // drawCross(raw_copy,ULp,Scalar(0,0,255));
+    // drawCross(raw_copy,URp,Scalar(0,255,0));
     // drawCross(raw_copy,DLp,Scalar(255,0,0));
-    // drawCross(raw_copy,DRp,Scalar(255,255,255));
+    //  drawCross(raw_copy,DRp,Scalar(255,255,255));
 
 
 
@@ -222,27 +224,34 @@ int main(int argc, char** argv)
     Point Lcen;
     Point Rcen;
     Point Ucen;
-
+    int cntL,cntR,cntU;
+    cntL=0;
+    cntR=0;
+    cntU=0;
         //cout<<"coufaceFlag "<<faceFlag.size()<<endl;
     for(i=0; i<numFace; i++ )
     { 
+
         if(faceFlag[i]==1)
         {  
         // cout<<"numFace "<<i<<endl;
+            cntL++;
             XL.push_back(faceCenter[i].x);
             YL.push_back(faceCenter[i].y);
         }
         if(faceFlag[i]==2)
         {
         // cout<<"numFace "<<i<<endl;
+            cntR++;
             XR.push_back(faceCenter[i].x);
             YR.push_back(faceCenter[i].y);
         }
         if(faceFlag[i]==3)
         {
+            cntU++;
         // cout<<"numFace "<<i<<endl;
-            XU.push_back(faceCenter[i].x);
-            YU.push_back(faceCenter[i].y);
+            // XU.push_back(faceCenter[i].x);
+            // YU.push_back(faceCenter[i].y);
         }
     }
     //cout<<"XL: "<<XL.size()<<endl;
@@ -252,18 +261,113 @@ int main(int argc, char** argv)
     sort(YL.begin(),YL.end());
     sort(XR.begin(),XR.end());
     sort(YR.begin(),YR.end());
-    sort(XR.begin(),XR.end());
-    sort(YR.begin(),YR.end());
+
     Lcen.x=XL[XL.size()/2];
     Lcen.y=YL[YL.size()/2];
     Rcen.x=XR[XR.size()/2];
     Rcen.y=YR[YR.size()/2];
-    Ucen.x=XU[XU.size()/2];
-    Ucen.y=YU[YU.size()/2];
-   drawCross(raw_copy,Lcen,Scalar(0,0,255));
-   drawCross(raw_copy,Rcen,Scalar(255,0,0));
+
+   // drawCross(raw_copy,Lcen,Scalar(0,0,255));
+   // drawCross(raw_copy,Rcen,Scalar(255,0,0));
    // drawCross(raw_copy,Ucen,Scalar(0,255,0));
+
+   //find angle mayBe vel dx/dy
+   vector<double> angleXL;
+   vector<double> angleYL;
+   vector<double> angleXR;
+   vector<double> angleYR; 
+   double MedangleXL,MedangleYL,MedangleXR,MedangleYR;
+
+
+   img_preview(raw_copy); 
+
+
+   for(i=0;i<numFace;i++)
+   {
+    drawContours( raw_copy, contours, i, Scalar(255,255,255), 1, 8);
+    // /cout<<"time "<<i<<endl;
+    if(faceFlag[i]==1)//left
+    {
+        // cout<<"UL UR DL DR "<<ULq[i]<<" "<<URq[i]<<"  "<<DLq[i]<<"  "<<DRq[i]<<endl;
+        // drawXline(raw_copy,DLq[i],(double(DRq[i].x-DLq[i].x))/(DRq[i].y-DLq[i].y),Scalar(255,0,0));
+        // //drawXline(raw_copy,ULq[i],(double(URq[i].x-ULq[i].x))/(URq[i].y-ULq[i].y),Scalar(0,255,0));
+        // drawXline(raw_copy,DRq[i],(double(DRq[i].x-DLq[i].x))/(DRq[i].y-DLq[i].y),Scalar(0,0,255));
+        // drawXline(raw_copy,URq[i],(double(DRq[i].x-DLq[i].x))/(DRq[i].y-DLq[i].y),Scalar(0,255,0));
+
+        angleXL.push_back((double(DRq[i].x-DLq[i].x))/(DRq[i].y-DLq[i].y));
+        angleXL.push_back((double(URq[i].x-ULq[i].x))/(URq[i].y-ULq[i].y));
+       // img_preview(raw_copy);
+        
+        //cout<<(double(DRq[i].x-DLq[i].x)/(DRq[i].y-DLq[i].y))<<endl;
+
+        angleYL.push_back((double(DLq[i].x-ULq[i].x))/(DLq[i].y-ULq[i].y));
+        angleYL.push_back((double(DRq[i].x-URq[i].x))/(DRq[i].y-URq[i].y));
+    }
     
+    if(faceFlag[i]==2)//right
+    {
+
+
+        angleXR.push_back(double(DRq[i].x-DLq[i].x)/(DRq[i].y-DLq[i].y));
+        angleXR.push_back(double(URq[i].x-ULq[i].x)/(URq[i].y-ULq[i].y));
+
+    // cout<<(double(DRq[i].x-DLq[i].x)/(DRq[i].y-DLq[i].y))<<endl;
+    // cout<<(double(URq[i].x-ULq[i].x)/(URq[i].y-ULq[i].y))<<endl;
+
+        angleYR.push_back(double(DLq[i].x-ULq[i].x)/(DLq[i].y-ULq[i].y));
+  
+        angleYR.push_back(double(DRq[i].x-URq[i].x)/(DRq[i].y-URq[i].y));
+
+        
+    }
+   }
+
+    sort(angleXL.begin(),angleXL.end());
+    sort(angleYL.begin(),angleYL.end());
+    sort(angleXR.begin(),angleXR.end());
+    sort(angleYR.begin(),angleYR.end());
+
+    double vel_corr=0.;
+
+
+    MedangleXL=angleXL[angleXL.size()/2];
+    MedangleYL=angleYL[angleYL.size()/2];
+    MedangleXR=angleXR[angleXR.size()/2];
+    MedangleYR=vel_corr*angleYR[angleYR.size()/2];
+
+    // cout<<"MedangleXL: "<<MedangleXL<<endl;
+    // cout<<"MedangleYL: "<<MedangleYL<<endl;
+    // cout<<"MedangleXR: "<<MedangleXR<<endl;
+    // cout<<"MedangleYR: "<<angleYR.size()/2<<endl;
+
+    //draw many lines
+    //for upper face have correction C
+    //TODO adjust C with area size
+    double Upper_corre=1.1;
+    for(i=0;i<numFace;i++)
+   {
+
+    if(faceFlag[i]==1)//left
+    {
+        //cout<<"UL UR DL DR "<<ULq[i]<<" "<<URq[i]<<"  "<<DLq[i]<<"  "<<DRq[i]<<endl;
+        //drawXline(raw_copy,faceCenter[i],MedangleXL,Scalar(255,0,0));
+        //drawXline(raw_copy,faceCenter[i],MedangleYL,Scalar(0,255,0));
+    }
+    
+    if(faceFlag[i]==2)//right
+    {
+        //drawXline(raw_copy,faceCenter[i],MedangleXR,Scalar(0,0,0));
+       //drawXline(raw_copy,faceCenter[i],MedangleYR,Scalar(255,255,255));
+    }
+    if(faceFlag[i]==3)//upper
+    {
+        drawXline(raw_copy,faceCenter[i],MedangleXL,Scalar(255,0,0));
+        drawXline(raw_copy,faceCenter[i],MedangleXR*Upper_corre,Scalar(0,255,0));
+    }
+   }
+    
+    
+
     img_preview(raw_copy); 
 
 
@@ -357,36 +461,46 @@ int Median(double a[],int N)
 void CornerPoint(vector<Point> contour,Point* ULp,Point* URp,Point* DLp,Point *DRp)
  {
     double UL,UR,DL,DR;
+    double ULx,URx,DLx,DRx;
+
     UL=100000;
     UR=-100000;
     DL=100000;
     DR=-100000;
     
+    ULx=100000;
+    URx=-100000;
+    DLx=100000;
+    DRx=-100000;
     for(vector<Point>::iterator it=contour.begin();it!=contour.end();it++)
     {
-        if((*it).x+(*it).y<UL)
+        if(((*it).x+(*it).y<UL)||(((*it).x+(*it).y==UL)&&(*it).x<ULx))
         {
             (*ULp).x=(*it).x;
             (*ULp).y=(*it).y;
+            ULx=(*it).x;
             UL=(*it).x+(*it).y;
         }
-        if((*it).x-(*it).y>UR)
+        if((*it).x-(*it).y>UR||(((*it).x-(*it).y==UR)&&(*it).x>URx))
         {
             //cout<<"DLp: DL"<<(*it).x-(*it).y<<"  "<<DL<<endl;
             (*URp).x=(*it).x;
             (*URp).y=(*it).y;
+            URx=(*it).x;
             UR=(*it).x-(*it).y;
         }
-        if((*it).x-(*it).y<DL)
+        if((*it).x-(*it).y<DL||(((*it).x+(*it).y==DL)&&(*it).x<DLx))
         {
             (*DLp).x=(*it).x;
             (*DLp).y=(*it).y;
+            DLx=(*it).x;
             DL=(*it).x-(*it).y;
         }
-        if((*it).x+(*it).y>DR)
+        if((*it).x+(*it).y>DR||(((*it).x-(*it).y==DR)&&(*it).x>DRx))
         {
             (*DRp).x=(*it).x;
             (*DRp).y=(*it).y;
+            DRx==(*it).x;
             DR=(*it).x+(*it).y;
         }
 
@@ -412,3 +526,17 @@ double dist(Point p1,Point p2)
     res=sqrt(p.x*p.x+p.y*p.y);
     return res;
 }
+void drawXline(Mat img,Point po,double angle,Scalar color)
+{
+    //angel= dx/dy
+    double len=200;
+    //Point2d le(angle,1);
+    Point l;
+    Point r;
+    l.x=po.x-angle*len;
+    l.y=po.y-len;
+    r.x=po.x+angle*len;
+    r.y=po.y+len;
+    line(img,l,r,color,2,8,0);
+}
+
