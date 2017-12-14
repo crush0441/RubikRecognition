@@ -21,6 +21,7 @@ void drawXline(Mat img,Point po,double angle,Scalar color);
 void drawYline(Mat img,Point po,double angle,Scalar color);
 void crossPoint(Point p0,Point p1,double angle0,double angle1,Point* crossPoint);
 void drawsmallCross(Mat img,Point p,Scalar color);
+int pointCluster(vector<Point> raw,vector<Point>* center,double limit);
 
 int main(int argc, char** argv)
 {
@@ -425,7 +426,7 @@ int main(int argc, char** argv)
 
    //delete some points which is close to central points in the same face
 
-   double errLim=0.6;
+   double errLim=0.5;
    for(vector<Point>::iterator it=Lcross.begin();it!=Lcross.end();)
    {
     int delFlag=0;
@@ -491,6 +492,13 @@ int main(int argc, char** argv)
    cout<<"Ucross"<<Ucross.size()<<endl;
    
 
+   //point Clouster based seed point
+   vector<Point> extraL;
+   vector<Point> extraR;
+   vector<Point> extraU;
+   cout<<"LNUM: "<<pointCluster(Lcross,&extraL,edgeL*errLim)<<endl;
+   cout<<"RNUM: "<<pointCluster(Rcross,&extraR,edgeR*errLim)<<endl;
+   cout<<"UNUM: "<<pointCluster(Ucross,&extraU,edgeU*errLim)<<endl;
 
 
 
@@ -681,5 +689,82 @@ void crossPoint(Point p0,Point p1,double angle0,double angle1,Point* crossPoint)
 {
     (*crossPoint).y=(p0.y*angle0-p1.y*angle1-p0.x+p1.x)/(angle0-angle1);
     (*crossPoint).x=((double)((*crossPoint).y-p0.y)*angle0+p0.x);
+}
+
+int pointCluster(vector<Point> raw,vector<Point>* center,double limit)
+{
+
+    int label=0;//lable number
+    int number=raw.size();
+
+    if(number==0)// check if vector is empty
+    {
+        cout<<"empty point set"<<endl;
+        return 0;
+    }
+
+
+
+    int initFlag=0;
+    int finishFlag=0;
+    int Flag[number]={0};//0-init 1-n label
+    Point seed;
+
+
+    while(finishFlag==0)
+    {
+
+
+        for(int i=0;i<number;i++)
+        {
+            if(initFlag==0)
+            {
+                if(Flag[i]==0)
+                {
+                initFlag=1;
+                label++;
+                seed=raw[i];
+                Flag[i]=label;
+
+                }
+            }
+            else
+            {
+                if(Flag[i]==0)
+                {
+                    if(dist(seed,raw[i])<limit)
+                    {
+                        Flag[i]=label;
+                    }
+                }
+            }
+            if(i==(number-1))
+            {
+                if(initFlag==0)
+                {
+                    finishFlag=1;
+                }
+                else
+                {
+                    initFlag=0;
+                }
+            }
+        }
+    }
+    //calc center
+    Point Pointsum[label+1];
+    int cnt[label+1]={0};
+    for(int i=0;i<number;i++)
+    {
+        Pointsum[Flag[i]]+=raw[i];
+        cnt[Flag[i]]++;
+    }
+    for(int i=1;i<label+1;i++)
+    {
+        Pointsum[i].x=Pointsum[i].x/cnt[i];
+        Pointsum[i].y=Pointsum[i].y/cnt[i];
+        (*center).push_back(Pointsum[i]);
+    }
+    return label;
 }
 
