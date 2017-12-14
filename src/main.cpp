@@ -30,7 +30,7 @@ int main(int argc, char** argv)
     namedWindow("img_preview",CV_WINDOW_NORMAL);
     imshow("raw",raw_img);
     bgr2BW(raw_img,&bw_img);
-    int i;
+    int i,j;
     double areaSizeQuene[100];
     int areaSizeCnt=0;
     int delete_flag=0;
@@ -138,12 +138,14 @@ int main(int argc, char** argv)
     int numFace = contours.size();
     vector<Point>  ULq,URq,DLq,DRq;
     vector<Point>  faceCenter;
+    vector<double>  faceArea;
     //vector<int>  faceFlag;
     ULq.reserve(numFace);
     URq.reserve(numFace);
     DLq.reserve(numFace);
     DRq.reserve(numFace);
     faceCenter.reserve(numFace);
+    faceArea.reserve(numFace);
     //faceFlag.reserve(numFace);
     int faceFlag[numFace]={0};//0-init 1-left 2-right 3-top
 
@@ -153,6 +155,7 @@ int main(int argc, char** argv)
         drawContours( blank, contours, i, color, 1, 8);
         
         double area=contourArea(contours[i]);
+        faceArea[i]=area;
     Moments m;
     m=moments(contours[i],true);
     Point center;
@@ -285,6 +288,8 @@ int main(int argc, char** argv)
    img_preview(raw_copy); 
 
 
+
+
    for(i=0;i<numFace;i++)
    {
     drawContours( raw_copy, contours, i, Scalar(255,255,255), 1, 8);
@@ -346,7 +351,17 @@ int main(int argc, char** argv)
     //draw many lines
     //for upper face have correction C
     //TODO adjust C with area size
+    
+    //find cross points of all this lines
     double Upper_corre=1.1;
+    vector<Point> Lcross;
+    vector<Point> Rcross;
+    vector<Point> Ucross;
+    double areaL=0;
+    double areaR=0;
+    double areaU=0;
+
+
     for(i=0;i<numFace;i++)
    {
 
@@ -355,22 +370,130 @@ int main(int argc, char** argv)
         //cout<<"UL UR DL DR "<<ULq[i]<<" "<<URq[i]<<"  "<<DLq[i]<<"  "<<DRq[i]<<endl;
         //drawXline(raw_copy,faceCenter[i],MedangleXL,Scalar(255,0,0));
         //drawXline(raw_copy,faceCenter[i],MedangleYL,Scalar(0,255,0));
-        
-        //cross point lab
+        for(j=0;j<numFace;j++)
+       {
+            if((faceFlag[j]==1)&&(i!=j))//left
+            {
+                Point cross;
+                crossPoint(faceCenter[i],faceCenter[j],MedangleXL,MedangleYL,&cross);
+                Lcross.push_back(cross);
+                areaL+=faceArea[i];
+                drawsmallCross(raw_copy,cross,Scalar(255,0,0));
+            }
+       }
     }
     
     if(faceFlag[i]==2)//right
     {
         //drawXline(raw_copy,faceCenter[i],MedangleXR,Scalar(0,0,0));
        //drawXline(raw_copy,faceCenter[i],MedangleYR,Scalar(255,255,255));
+        for(j=0;j<numFace;j++)
+       {
+        if((faceFlag[j]==2)&&(i!=j))//left
+        {
+            Point cross;
+            crossPoint(faceCenter[i],faceCenter[j],MedangleXR,MedangleYR,&cross);
+            Rcross.push_back(cross);
+            areaR+=faceArea[i];
+            drawsmallCross(raw_copy,cross,Scalar(255,0,0));
+        }
+        }
     }
     if(faceFlag[i]==3)//upper
     {
         // drawXline(raw_copy,faceCenter[i],MedangleXL,Scalar(255,0,0));
         // drawXline(raw_copy,faceCenter[i],MedangleXR*Upper_corre,Scalar(0,255,0));
+        for(j=0;j<numFace;j++)
+       {
+        if((faceFlag[j]==3)&&(i!=j))//left
+        {
+            Point cross;
+            crossPoint(faceCenter[i],faceCenter[j],MedangleXL,MedangleXR*Upper_corre,&cross);
+            Ucross.push_back(cross);
+            areaU+=faceArea[i];
+            drawsmallCross(raw_copy,cross,Scalar(0,255,0));
+        }
+        }
     }
    }
-    
+   areaL=areaL/cntL;
+   areaR=areaR/cntR;
+   areaU=areaU/cntU;
+   double edgeL=sqrt(areaL);
+   double edgeR=sqrt(areaR);
+   double edgeU=sqrt(areaU);
+
+   //delete some points which is close to central points in the same face
+
+   double errLim=0.6;
+   for(vector<Point>::iterator it=Lcross.begin();it!=Lcross.end();)
+   {
+    int delFlag=0;
+    for(i=1;i<numFace;i++)
+    {
+        if(faceFlag[i]==1)
+        {
+            if(dist((*it),faceCenter[i])<edgeL*errLim)
+            {
+                delFlag=1;
+                break;
+            }
+        }   
+    }
+    if(delFlag)
+    {it=Lcross.erase(it);}
+    else
+    {it++;}
+   }
+
+    for(vector<Point>::iterator it=Rcross.begin();it!=Rcross.end();)
+   {
+    int delFlag=0;
+    for(i=1;i<numFace;i++)
+    {
+        if(faceFlag[i]==2)
+        {
+            if(dist((*it),faceCenter[i])<edgeR*errLim)
+            {
+                delFlag=1;
+                break;
+            }
+        }   
+    }
+    if(delFlag)
+    {it=Rcross.erase(it);}
+    else
+    {it++;}
+   }
+
+    for(vector<Point>::iterator it=Ucross.begin();it!=Ucross.end();)
+   {
+    int delFlag=0;
+    for(i=1;i<numFace;i++)
+    {
+        if(faceFlag[i]==3)
+        {
+            if(dist((*it),faceCenter[i])<edgeU*errLim)
+            {
+                delFlag=1;
+                break;
+            }
+        }   
+    }
+    if(delFlag)
+    {it=Ucross.erase(it);}
+    else
+    {it++;}
+   }
+
+   cout<<"Lcross"<<Lcross.size()<<endl;
+   cout<<"Rcross"<<Rcross.size()<<endl;
+   cout<<"Ucross"<<Ucross.size()<<endl;
+   
+
+
+
+
     
 
     img_preview(raw_copy); 
