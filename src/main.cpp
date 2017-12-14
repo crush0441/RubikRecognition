@@ -108,7 +108,7 @@ int main(int argc, char** argv)
     double medSize;
     medSize=Median(areaSizeQuene,contours.size());
     
-    cout<<"medSize :"<<medSize<<endl;
+    //cout<<"medSize :"<<medSize<<endl;
 
     for (vector<vector<Point> >::iterator it = contours.begin(); it != contours.end();) 
     {
@@ -133,11 +133,13 @@ int main(int argc, char** argv)
     int numFace = contours.size();
     vector<Point>  ULq,URq,DLq,DRq;
     vector<Point>  faceCenter;
+    //vector<int>  faceFlag;
     ULq.reserve(numFace);
     URq.reserve(numFace);
     DLq.reserve(numFace);
     DRq.reserve(numFace);
     faceCenter.reserve(numFace);
+    //faceFlag.reserve(numFace);
     int faceFlag[numFace]={0};//0-init 1-left 2-right 3-top
 
     for(i=0; i<contours.size(); i++ )
@@ -152,7 +154,7 @@ int main(int argc, char** argv)
     center.x=m.m10/m.m00;
     center.y=m.m01/m.m00;
     // drawCross(raw_copy,center,Scalar(125,0,0));
-
+    faceCenter[i]=center;
 
     CornerPoint(contours[i],&ULp,&URp,&DLp,&DRp);
     //drawCross(raw_copy,ULp,Scalar(0,0,255));
@@ -172,12 +174,12 @@ int main(int argc, char** argv)
 
     //find upper face
     double edgelen=sqrt(area);
-    cout<<"dist :"<<dist(ULp,DLp)<<endl;
-    cout<<"edge :"<<edgelen<<endl;
+    //cout<<"dist :"<<dist(ULp,DLp)<<endl;
+    //cout<<"edge :"<<edgelen<<endl;
     if((dist(ULp,DLp)<edgelen/2)&&(dist(URp,DRp)<edgelen/2))
     {
         faceFlag[i]=3;
-        drawCross(raw_copy,center,Scalar(255,0,0));
+        //drawCross(raw_copy,center,Scalar(255,0,0));
     }
 
 
@@ -198,18 +200,55 @@ int main(int argc, char** argv)
         if((URp.y>ULp.y)&&(DRp.y>DLp.y))
         {
             faceFlag[i]=1;//left
-            drawCross(raw_copy,center,Scalar(0,0,255));
+            //drawCross(raw_copy,center,Scalar(0,0,255));
         }
         if((URp.y<ULp.y)&&(DRp.y<DLp.y))
         {
             faceFlag[i]=2;//right
-            drawCross(raw_copy,center,Scalar(0,255,0));
+            //drawCross(raw_copy,center,Scalar(0,255,0));
         }
     }
-      img_preview(raw_copy); 
+      //img_preview(raw_copy); 
     }
+    
 
+    //find central point
+    vector<double> XL;
+    vector<double> YL;
+    vector<double> XR;
+    vector<double> YR;
+    Point Lcen;
+    Point Rcen;
 
+        //cout<<"coufaceFlag "<<faceFlag.size()<<endl;
+    for(i=0; i<numFace; i++ )
+    { 
+        if(faceFlag[i]==1)
+        {  
+        cout<<"numFace "<<i<<endl;
+            XL.push_back(faceCenter[i].x);
+            YL.push_back(faceCenter[i].y);
+        }
+        if(faceFlag[i]==2)
+        {
+        cout<<"numFace "<<i<<endl;
+            XR.push_back(faceCenter[i].x);
+            YR.push_back(faceCenter[i].y);
+        }
+    }
+    //cout<<"XL: "<<XL.size()<<endl;
+    ///cout<<Median(XL,XL.size());
+    //find median value
+     sort(XL.begin(),XL.end());
+     sort(YL.begin(),YL.end());
+     sort(XR.begin(),XR.end());
+     sort(YR.begin(),YR.end());
+    Lcen.x=XL[XL.size()/2];
+    Lcen.y=YL[YL.size()/2];
+    Rcen.x=XR[XR.size()/2];
+    Rcen.y=YR[YR.size()/2];
+   drawCross(raw_copy,Lcen,Scalar(0,0,255));
+   drawCross(raw_copy,Rcen,Scalar(255,0,0));
     
     img_preview(raw_copy); 
 
@@ -338,10 +377,10 @@ void CornerPoint(vector<Point> contour,Point* ULp,Point* URp,Point* DLp,Point *D
         }
 
     }
-    cout<<(*ULp)<<endl;
-    cout<<(*URp)<<endl;
-    cout<<(*DLp)<<endl;
-    cout<<(*DRp)<<endl;
+    // cout<<(*ULp)<<endl;
+    // cout<<(*URp)<<endl;
+    // cout<<(*DLp)<<endl;
+    // cout<<(*DRp)<<endl;
  }
 
 void drawCross(Mat img,Point p,Scalar color)
