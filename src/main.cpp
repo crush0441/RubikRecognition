@@ -248,21 +248,21 @@ int main(int argc, char** argv)
     //cout<<"XL: "<<XL.size()<<endl;
     ///cout<<Median(XL,XL.size());
     //find median value
-     sort(XL.begin(),XL.end());
-     sort(YL.begin(),YL.end());
-     sort(XR.begin(),XR.end());
-     sort(YR.begin(),YR.end());
-        sort(XR.begin(),XR.end());
-     sort(YR.begin(),YR.end());
+    sort(XL.begin(),XL.end());
+    sort(YL.begin(),YL.end());
+    sort(XR.begin(),XR.end());
+    sort(YR.begin(),YR.end());
+    sort(XR.begin(),XR.end());
+    sort(YR.begin(),YR.end());
     Lcen.x=XL[XL.size()/2];
     Lcen.y=YL[YL.size()/2];
     Rcen.x=XR[XR.size()/2];
     Rcen.y=YR[YR.size()/2];
-    Ucen.x=UR[UR.size()/2];
-    Ucen.y=UR[UR.size()/2];
+    Ucen.x=XU[XU.size()/2];
+    Ucen.y=YU[YU.size()/2];
    drawCross(raw_copy,Lcen,Scalar(0,0,255));
    drawCross(raw_copy,Rcen,Scalar(255,0,0));
-   drawCross(raw_copy,Ucen,Scalar(0,255,0));
+   // drawCross(raw_copy,Ucen,Scalar(0,255,0));
     
     img_preview(raw_copy); 
 
