@@ -23,6 +23,10 @@ void crossPoint(Point p0,Point p1,double angle0,double angle1,Point* crossPoint)
 void drawsmallCross(Mat img,Point p,Scalar color);
 int pointCluster(vector<Point> raw,vector<Point>* center,double limit);
 void checkPixelColor(Mat raw_copy,Mat* HSV,Point po);
+void areaOffset(vector<Point> src,vector<Point>* des,Point src_cen,Point des_cen);
+void drawPoints(Mat img,vector<Point> po,const Scalar & color);
+void putCentertext(Mat img,const char * str,Point po,int font,int size,Scalar color);
+
 static void onmouse(int event,int x,int y,int f,void * param);
 
 int main(int argc, char** argv)
@@ -112,8 +116,10 @@ int main(int argc, char** argv)
             areaSizeCnt++;
             it++;
         }
-        
     }
+
+
+
     
     double medSize;
     medSize=Median(areaSizeQuene,contours.size());
@@ -154,11 +160,20 @@ int main(int argc, char** argv)
     //faceFlag.reserve(numFace);
     int faceFlag[numFace]={0};//0-init 1-left 2-right 3-top
 
+
+    for(i=1;i<numFace;i++)
+    {
+        areaSizeQuene[i]=contourArea(contours[i]);
+    }
+
+
+
+
     for(i=0; i<contours.size(); i++ )
     {
         Scalar color=255;
-        drawContours( blank, contours, i, color, 1, 8);
-        
+        drawContours( blank, contours, i, color, -1, 8);
+        //img_preview(blank);
         double area=contourArea(contours[i]);
         faceArea[i]=area;
     Moments m;
@@ -196,6 +211,7 @@ int main(int argc, char** argv)
     }
 
 
+
     //line have a big K is a vel line
     double dx1,dx2;
     if(abs(ULp.x-DLp.x)<0.00001)
@@ -223,7 +239,15 @@ int main(int argc, char** argv)
     }
       //img_preview(raw_copy); 
     }
-    
+    //masked img
+    Mat img_masked;
+    raw_img.copyTo(img_masked,blank);
+    img_preview(img_masked);    
+
+
+
+
+
 
     //find central point
     vector<double> XL;
@@ -383,7 +407,7 @@ int main(int argc, char** argv)
                 crossPoint(faceCenter[i],faceCenter[j],MedangleXL,MedangleYL,&cross);
                 Lcross.push_back(cross);
                 areaL+=faceArea[i];
-                drawsmallCross(raw_copy,cross,Scalar(255,0,0));
+                //drawsmallCross(raw_copy,cross,Scalar(255,0,0));
             }
        }
     }
@@ -400,14 +424,14 @@ int main(int argc, char** argv)
             crossPoint(faceCenter[i],faceCenter[j],MedangleXR,MedangleYR,&cross);
             Rcross.push_back(cross);
             areaR+=faceArea[i];
-            drawsmallCross(raw_copy,cross,Scalar(255,0,0));
+            //drawsmallCross(raw_copy,cross,Scalar(255,0,0));
         }
         }
     }
     if(faceFlag[i]==3)//upper
     {
-        // drawXline(raw_copy,faceCenter[i],MedangleXL,Scalar(255,0,0));
-        // drawXline(raw_copy,faceCenter[i],MedangleXR*Upper_corre,Scalar(0,255,0));
+        drawXline(raw_copy,faceCenter[i],MedangleXL,Scalar(255,0,0));
+        drawXline(raw_copy,faceCenter[i],MedangleXR*Upper_corre,Scalar(0,255,0));
         for(j=0;j<numFace;j++)
        {
         if((faceFlag[j]==3)&&(i!=j))//left
@@ -416,7 +440,7 @@ int main(int argc, char** argv)
             crossPoint(faceCenter[i],faceCenter[j],MedangleXL,MedangleXR*Upper_corre,&cross);
             Ucross.push_back(cross);
             areaU+=faceArea[i];
-            drawsmallCross(raw_copy,cross,Scalar(0,255,0));
+            //drawsmallCross(raw_copy,cross,Scalar(0,255,0));
         }
         }
     }
@@ -513,9 +537,9 @@ int main(int argc, char** argv)
 
    cvtColor(raw_color,hsv_img,CV_BGR2HSV);
    split(hsv_img,HSVchannel);
-   img_preview(HSVchannel[0]);
-   img_preview(HSVchannel[1]);
-   img_preview(HSVchannel[2]);
+   // img_preview(HSVchannel[0]);
+   // img_preview(HSVchannel[1]);
+   // img_preview(HSVchannel[2]);
     
    int font=FONT_HERSHEY_PLAIN;
    //scan all the poins and give color label
@@ -526,29 +550,29 @@ int main(int argc, char** argv)
     //color porblem
         if((HSVchannel[1].at<uchar>(faceCenter[i]))<50)
         {
-        putText(raw_copy,"W",faceCenter[i],font,3,Scalar(0,0,0));
+        putCentertext(raw_copy,"W",faceCenter[i],font,3,Scalar(0,0,0));
         continue;
         }
         int Hval=HSVchannel[0].at<uchar>(faceCenter[i]);
         if(Hval<10)
         {
-        putText(raw_copy,"R",faceCenter[i],font,3,Scalar(0,0,0));
+        putCentertext(raw_copy,"R",faceCenter[i],font,3,Scalar(0,0,0));
         }
         if(Hval>9&&Hval<22)
         {
-        putText(raw_copy,"O",faceCenter[i],font,3,Scalar(0,0,0));
+        putCentertext(raw_copy,"O",faceCenter[i],font,3,Scalar(0,0,0));
         }
         if(Hval>21&&Hval<35)
         {
-        putText(raw_copy,"Y",faceCenter[i],font,3,Scalar(0,0,0));
+        putCentertext(raw_copy,"Y",faceCenter[i],font,3,Scalar(0,0,0));
         }
         if(Hval>50&&Hval<90)
         {
-        putText(raw_copy,"G",faceCenter[i],font,3,Scalar(0,0,0));
+        putCentertext(raw_copy,"G",faceCenter[i],font,3,Scalar(0,0,0));
         }
         if(Hval>95&&Hval<120)
         {
-        putText(raw_copy,"B",faceCenter[i],font,3,Scalar(0,0,0));
+        putCentertext(raw_copy,"B",faceCenter[i],font,3,Scalar(0,0,0));
         }
         
    }
@@ -574,6 +598,127 @@ int main(int argc, char** argv)
             checkPixelColor(raw_copy,HSVchannel,extraU[i]);
         }
    }
+   //find fit area for each direction face(actually smallest center)
+
+
+   Point LfitCen;
+   Point RfitCen;
+   Point UfitCen;
+
+   int Lfit,Rfit,Ufit;
+   int smallestSizeL,smallestSizeR,smallestSizeU;
+   smallestSizeL=100000;
+   smallestSizeR=100000;
+   smallestSizeU=100000;
+
+
+   for(i=0;i<numFace;i++)
+   {
+        if(faceFlag[i]==1)
+        {
+            if(areaSizeQuene[i]<smallestSizeL)
+            {
+                Lfit=i;
+                smallestSizeL=areaSizeQuene[i];
+            }
+        }
+        if(faceFlag[i]==2)
+        {
+            if(areaSizeQuene[i]<smallestSizeR)
+            {
+                Rfit=i;
+                smallestSizeR=areaSizeQuene[i];
+            }
+        }
+        if(faceFlag[i]==3)
+        {
+            if(areaSizeQuene[i]<smallestSizeU)
+            {
+                Ufit=i;
+                smallestSizeU=areaSizeQuene[i];
+                //drawsmallCross(raw_copy,faceCenter[i],Scalar(0,0,255));
+                cout<<"area:  "<<areaSizeQuene[i]<<endl;
+            }
+        } 
+   }
+
+    cout<<"fitnum: "<<Lfit<<" "<<Rfit<<" "<<Ufit<<endl;
+
+    vector<vector<Point> > LfitArea;
+    vector<vector<Point> > RfitArea;
+    vector<vector<Point> > UfitArea;
+
+   LfitArea.reserve(1);
+   RfitArea.reserve(1);
+   UfitArea.reserve(1);
+
+
+
+
+    // (*(&RfitArea[0])).push_back(faceCenter[1]);
+     //(*(&RfitArea[0])).push_back(faceCenter[2]);
+    // cout<<RfitArea[0]<<endl;
+    //cout<<contours[Rfit]<<endl;
+
+
+   vector<Point> temp;
+
+   //    for(i=0;i<extraR.size();i++)
+   // {
+   //  areaOffset(contours[Rfit],&temp,faceCenter[Rfit],extraR[0]);
+   //  RfitArea.push_back(temp);
+   //  drawContours(raw_copy, RfitArea,0, Scalar(255,255,255), 2, 8);
+   // }
+   //extraR.size()
+   for(i=0;i<extraR.size();i++)
+   {
+    //RfitArea.clear();
+    areaOffset(contours[Rfit],&temp,faceCenter[Rfit],extraR[i]);
+    
+    drawPoints(raw_copy,temp,Scalar(255,255,255));
+    //RfitArea.push_back(temp);
+
+    //drawContours(raw_copy, RfitArea,i, Scalar(255,255,255), 1,8,noArray(),1);
+
+    //drawContours(raw_copy, RfitArea,0, Scalar(255,255,255), 2, 4);
+   }
+      for(i=0;i<extraL.size();i++)
+   {
+    //RfitArea.clear();
+    areaOffset(contours[Lfit],&temp,faceCenter[Lfit],extraL[i]);
+    
+    //LfitArea.push_back(temp);
+drawPoints(raw_copy,temp,Scalar(255,255,255));
+    //drawContours(raw_copy, LfitArea,i, Scalar(255,255,255), 1, 8,noArray(),1);
+
+    //drawContours(raw_copy, RfitArea,0, Scalar(255,255,255), 2, 4);
+
+   }
+      for(i=0;i<extraU.size();i++)
+   {
+    //RfitArea.clear();
+    areaOffset(contours[Ufit],&temp,faceCenter[Ufit],extraU[i]);
+    
+   // UfitArea.push_back(temp);
+drawPoints(raw_copy,temp,Scalar(255,255,255));
+    //drawContours(raw_copy, UfitArea,i, Scalar(255,255,255), 1, 8,noArray(),1);
+
+    //drawContours(raw_copy, RfitArea,0, Scalar(255,255,255), 2, 4);
+    img_preview(raw_copy);
+   }
+
+    img_preview(raw_copy);
+
+
+
+
+
+
+
+
+
+
+
 
     img_preview(raw_copy); 
 
@@ -850,34 +995,76 @@ static void onmouse(int event,int x,int y,int f,void * param)
         }
 }
 
+void putCentertext(Mat img,const char * str,Point po,int font,int size,Scalar color)
+{
+    int baseLine;
+    Size text_size=getTextSize(str, font, size, 1,&baseLine);
+    Point offset;
+    offset.x=po.x-text_size.width/2;
+    offset.y=po.y+text_size.height/2;
+    putText(img,str,offset,font,size-1,color,2);
+}
+
+
+
 void checkPixelColor(Mat raw_copy,Mat* HSV,Point po)
 {
         int font=FONT_HERSHEY_PLAIN;
         if((HSV[1].at<uchar>(po))<50)
         {
-        putText(raw_copy,"W",po,font,3,Scalar(0,0,0));
+        putCentertext(raw_copy,"W",po,font,3,Scalar(0,0,0));
         return;
         }
         int Hval=HSV[0].at<uchar>(po);
         if(Hval<10)
         {
-        putText(raw_copy,"R",po,font,3,Scalar(0,0,0));
+        putCentertext(raw_copy,"R",po,font,3,Scalar(0,0,0));
         }
         if(Hval>9&&Hval<22)
         {
-        putText(raw_copy,"O",po,font,3,Scalar(0,0,0));
+        putCentertext(raw_copy,"O",po,font,3,Scalar(0,0,0));
         }
         if(Hval>21&&Hval<35)
         {
-        putText(raw_copy,"Y",po,font,3,Scalar(0,0,0));
+        putCentertext(raw_copy,"Y",po,font,3,Scalar(0,0,0));
         }
         if(Hval>50&&Hval<90)
         {
-        putText(raw_copy,"G",po,font,3,Scalar(0,0,0));
+        putCentertext(raw_copy,"G",po,font,3,Scalar(0,0,0));
         }
         if(Hval>95&&Hval<120)
         {
-        putText(raw_copy,"B",po,font,3,Scalar(0,0,0));
+        putCentertext(raw_copy,"B",po,font,3,Scalar(0,0,0));
         }
+}
+
+void areaOffset(vector<Point> src,vector<Point>* des,Point src_cen,Point des_cen)
+{
+    Point offset;
+    offset = des_cen - src_cen;
+    //(*des).clear();
+
+
+
+    for(int i=0;i<src.size();i++)
+    {
+        (*des).push_back(src[i]+offset);
+    }
+   
+}
+//TODO use average image replace specific image
+void getAverageImg(vector<vector<Point> > src,vector<Point>* des)
+{
+
+
+}
+
+void drawPoints(Mat img,vector<Point> po,const Scalar & color)
+{
+    for(int i=0;i<po.size();i++)
+    {
+        circle(img,po[i],0,color,2,8);
+    }
+
 }
 
